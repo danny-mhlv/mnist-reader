@@ -1,0 +1,6 @@
+*.exe
+.vscode/
+test-img
+test-lbl
+train-img
+train-lbl
