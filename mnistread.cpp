@@ -1,7 +1,3 @@
-// TODO:
-
-// Function structures???
-
 #include "mnistread.h"
 
 // 'sample' struct member functions definitions
