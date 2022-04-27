@@ -1,78 +1,30 @@
 // TODO:
 
-// constant sizes of read (like 4/1 bytes)
-// should be replaced by a sizeof(T)???
-
-// Function descriptions
-
 // Function structures???
 
-// SAMPLe struct template???
+#include "mnistread.h"
 
-// Make a header
+// 'sample' struct member functions definitions
+sample::sample() {
+    w = 0;
+    h = 0;
+    label = 10; // Artificial value
+}
 
-#include <iostream>
-#include <algorithm>
-#include <fstream>
-#include <vector>
+sample::sample(int width, int height) {
+    w = width;
+    h = height;
+    label = 10; // Artificial value
+}
 
-// Learning sample
-struct sample {
-    sample();
-    sample(int width, int height);
+void sample::set_dimensions(int width, int height) {
+    w = width;
+    h = height;
+}
 
-    int w, h;
-    std::vector<uint8_t> image;
-    uint8_t label;
-
-    void set_dimensions(int width, int height);
-    void display();
-};
-
-// The exact values is defined in file format specification
-#define IMG_MAGIC 2051
-#define LBL_MAGIC 2049
-
-// Reads single image specified by 'width' and
-// 'height' to the vector 'vec' representing this
-// image in one-line 'pixel-brightness-values' manner.
-template <class T>
-void read_img(std::ifstream* file, std::vector<T>* vec, int width, int height);
-
-// Reads set of images of the same size specified
-// by 'w' and 'h' to the vector 'vec'.
-// Internally utilizes thed read_imgset()' function
-// described above.
-template <class T>
-void read_imgset(std::ifstream* file, std::vector<T>* vec, uint32_t imgnum, int w, int h);
-
-// Reads single lable for the image
-template <class T>
-void read_lbl(std::ifstream* file, T* label);
-
-// Reads 'lblnum' amount of labels to 'vec'
-template <class T>
-void read_lblset(std::ifstream* file, std::vector<T>* vec, uint32_t lblnum);
-
-void pack_trainset(const char* imgfile, const char* lblfile, std::vector<sample>* vec, uint32_t sz);
-
-// Swaps the endianness of the given object.
-template <class T>
-void endswap(T* ptr);
-
-// Writes the image(s) to the standard output,
-// deviding at every 'width+1' character with
-// '\n' in ASCII-format.
-template <class T>
-void ascii_art(std::vector<T>* vec, int width);
-
-int main(int argc, char* argv[]) {
-    std::vector<sample> sv;
-    pack_trainset("train-img", "train-lbl", &sv, 100);
-    for (sample elem : sv) {
-        elem.display();
-    }
-    return 0;
+void sample::display() {
+    std::cout << "\n" << "---|" << (int)label << "|---";
+    ascii_art(&image, w);
 }
 
 template <class T>
@@ -80,7 +32,7 @@ void read_img(std::ifstream* file, std::vector<T>* vec, int width, int height) {
     T curval;
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            file->read((char*)&curval, 1);
+            file->read(reinterpret_cast<char*>(&curval), sizeof(T));
             vec->push_back(curval);
         }
     }
@@ -95,14 +47,14 @@ void read_imgset(std::ifstream* file, std::vector<T>* vec, int imgnum, int w, in
 
 template <class T>
 void read_lbl(std::ifstream* file, T* label) {
-    file->read(reinterpret_cast<char*>(label), 1);
+    file->read(reinterpret_cast<char*>(label), sizeof(T));
 }
 
 template <class T>
 void read_lblset(std::ifstream* file, std::vector<T>* vec, int lblnum) {
     T curlbl;
     for (int i = 0; i < lblnum; i++) {
-        file->read((char*)&curlbl, 1);
+        file->read(reinterpret_cast<char*>(&curlbl), sizeof(T));
         vec->push_back(curlbl);
     }
 }
@@ -137,13 +89,12 @@ void pack_trainset(const char* imgfile, const char* lblfile, std::vector<sample>
         std::cout << "Given size exceeds the limit!" << std::endl;
         std::cout << "Given size: " << sz << std::endl;
         std::cout << "Max. images: " << max_img << " Max. labels: " << max_lbl << std::endl;
-        return;
-    }
-
-    for (int i = 0; i < sz; i++) {
-        (*vec).push_back(sample(w, h));
-        read_img(&imgfs, &(vec->back().image), w, h);
-        read_lbl(&lblfs, &(vec->back().label));
+    } else {
+        for (int i = 0; i < sz; i++) {
+            (*vec).push_back(sample((int)w, (int)h));
+            read_img(&imgfs, &(vec->back().image), (int)w, (int)h);
+            read_lbl(&lblfs, &(vec->back().label));
+        }
     }
 
     imgfs.close();
@@ -182,25 +133,3 @@ void ascii_art(std::vector<T>* vec, int width) {
     }
 }
 
-// 'sample' struct member functions definitions
-sample::sample() {
-    w = 0;
-    h = 0;
-    label = 10; // Artificial value
-}
-
-sample::sample(int width, int height) {
-    w = width;
-    h = height;
-    label = 10; // Artificial value
-}
-
-void sample::set_dimensions(int width, int height) {
-    w = width;
-    h = height;
-}
-
-void sample::display() {
-    std::cout << "\n" << "---|" << (int)label << "|---";
-    ascii_art(&image, w);
-}
